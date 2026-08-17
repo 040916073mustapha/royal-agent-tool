@@ -196,6 +196,15 @@ def delete_order(order_id):
     return jsonify({'success': True, 'deleted': order_id})
 
 # ── API: Daily count ──────────────────────────────────────
+# ── API: Today orders ────────────────────────────────────
+@app.route('/api/orders/today')
+def today_orders():
+    conn = get_db()
+    today = datetime.date.today().isoformat()
+    rows = conn.execute('SELECT * FROM orders WHERE date(created_at) = ? ORDER BY created_at DESC', (today,)).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
 @app.route('/api/orders/today-count')
 def today_count():
     conn = get_db()
