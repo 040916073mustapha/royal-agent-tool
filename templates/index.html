@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧰 Royal Agent Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; }
+        .copy-btn:active { transform: scale(0.95); }
+        .badge-neon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: #1f2937; color: white; padding: 12px 24px; border-radius: 12px;
+            z-index: 9999; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: none; animation: fadeIn 0.3s ease;
+        }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+<div x-data="royalApp()" class="min-h-screen pb-20">
+
+    <!-- ─── TOAST ─── -->
+    <div id="toast" class="toast flex items-center gap-2">
+        <i class="fas fa-check-circle text-green-400"></i>
+        <span id="toastMsg">تم النسخ!</span>
+    </div>
+
+    <!-- ─── TOP BAR ─── -->
+    <div class="badge-neon text-white shadow-lg">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+                <span class="text-xl">👑 Royal Chaussures</span>
+                <span class="bg-white/20 text-xs px-3 py-1 rounded-full">🧰 Agent Tool</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-4 text-sm">
+                <span><i class="far fa-clock ml-1"></i> 🕐 10:00 - 17:00</span>
+                <span class="text-yellow-300"><i class="fas fa-ban ml-1"></i> الجمعة عطلة ❌</span>
+                <a href="tel:+213659832426" class="hover:text-yellow-200 transition">
+                    <i class="fas fa-phone ml-1"></i> +213 659 83 24 26
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── MAIN GRID ─── -->
+    <div class="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- ═══════ RIGHT COLUMN (2/3) ═══════ -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- ── SHIPPING CALCULATOR ── -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 card-hover transition">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    <i class="fas fa-truck text-purple-600"></i>
+                    حاسبة التوصيل 🚚
+                </h2>
+
+                <!-- Tab: ZR / Local -->
+                <div class="flex gap-2 mb-4">
+                    <button @click="tab = 'zr'" :class="tab === 'zr' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'"
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-map-marker-alt ml-1"></i> 58 ولاية
+                    </button>
+                    <button @click="tab = 'local'" :class="tab === 'local' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'"
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-home ml-1"></i> تلمسان محلي
+                    </button>
+                </div>
+
+                <!-- ZR Tab -->
+                <div x-show="tab === 'zr'" class="space-y-3 fade-in">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">الولاية</label>
+                        <div class="relative">
+                            <input x-model="wilayaQuery" @input="searchWilayas()" @focus="showWilayaList = true"
+                                   @click.outside="showWilayaList = false"
+                                   class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                                   placeholder="اكتب اسم الولاية...">
+                            <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
+                        </div>
+                        <div x-show="wilayaResults.length > 0 && showWilayaList"
+                             class="absolute z-10 mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                            <template x-for="w in wilayaResults" :key="w">
+                                <div @click="selectWilaya(w)" class="px-4 py-2 hover:bg-purple-50 cursor-pointer text-sm border-b border-gray-50"
+                                     x-text="w"></div>
+                            </template>
+                        </div>
+                    </div>
+                    <div x-show="selectedWilaya" class="bg-purple-50 rounded-lg p-4 fade-in">
+                        <p class="text-lg font-bold text-purple-700 text-center" x-text="'📍 ' + selectedWilaya"></p>
+                        <div class="grid grid-cols-2 gap-3 mt-3">
+                            <div class="bg-white rounded-lg p-3 text-center">
+                                <i class="fas fa-home text-green-600 text-xl"></i>
+                                <p class="text-xs text-gray-500 mt-1">توصيل منزل</p>
+                                <p class="text-2xl font-bold text-green-700" x-text="zrHome + ' د.ج'"></p>
+                            </div>
+                            <div class="bg-white rounded-lg p-3 text-center">
+                                <i class="fas fa-building text-blue-600 text-xl"></i>
+                                <p class="text-xs text-gray-500 mt-1">توصيل مكتب</p>
+                                <p class="text-2xl font-bold text-blue-700" x-text="zrOffice + ' د.ج'"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Local Tab -->
+                <div x-show="tab === 'local'" class="space-y-3 fade-in">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">البلدية</label>
+                        <select x-model="selectedCommune" @change="calcLocal()"
+                                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 outline-none">
+                            <option value="">-- اختر البلدية --</option>
+                            <template x-for="c in communes" :key="c">
+                                <option x-text="c" :value="c"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div x-show="selectedCommune" class="bg-green-50 rounded-lg p-4 fade-in">
+                        <p class="text-lg font-bold text-green-700 text-center" x-text="'📍 ' + selectedCommune + ' - تلمسان'"></p>
+                        <div class="grid grid-cols-2 gap-3 mt-3">
+                            <div class="bg-white rounded-lg p-3 text-center">
+                                <i class="fas fa-home text-green-600 text-xl"></i>
+                                <p class="text-xs text-gray-500 mt-1">توصيل منزل</p>
+                                <p class="text-2xl font-bold text-green-700" x-text="localHome + ' د.ج'"></p>
+                            </div>
+                            <div class="bg-white rounded-lg p-3 text-center">
+                                <i class="fas fa-building text-blue-600 text-xl"></i>
+                                <p class="text-xs text-gray-500 mt-1">توصيل مكتب</p>
+                                <p class="text-2xl font-bold text-blue-700" x-text="localOffice + ' د.ج'"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── ORDER FORM ── -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 card-hover transition">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    <i class="fas fa-clipboard-list text-emerald-600"></i>
+                    تسجيل طلب جديد 📝
+                </h2>
+                <form @submit.prevent="submitOrder" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">الاسم الكامل</label>
+                        <input x-model="form.name" required
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"
+                               placeholder="اسم الزبون">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">رقم الهاتف</label>
+                        <input x-model="form.phone" required dir="ltr"
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"
+                               placeholder="05XX XX XX XX">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">الولاية</label>
+                        <input x-model="form.wilaya" required
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"
+                               placeholder="ولاية">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">البلدية</label>
+                        <input x-model="form.commune" required
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"
+                               placeholder="بلدية/حي">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">المنتج</label>
+                        <input x-model="form.product" required
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"
+                               placeholder="اسم المنتج واللون">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">المقاس</label>
+                            <input x-model="form.size" required
+                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"
+                                   placeholder="مثل 38">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">الكمية</label>
+                            <input x-model="form.quantity" type="number" min="1" value="1"
+                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">اللون</label>
+                        <input x-model="form.color"
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"
+                               placeholder="مثل أحمر/أسود">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">نوع التوصيل</label>
+                        <select x-model="form.delivery_type" required
+                                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none">
+                            <option value="home">🚚 توصيل للمنزل</option>
+                            <option value="office">🏢 توصيل لمكتب ZR Express</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">ملاحظة (اختياري)</label>
+                        <textarea x-model="form.note" rows="2"
+                                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <button type="submit"
+                                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg transition flex items-center justify-center gap-2">
+                            <i class="fas fa-save"></i> حفظ الطلب
+                        </button>
+                    </div>
+                </form>
+                <div x-show="orderSuccess" class="mt-3 bg-green-50 text-green-700 rounded-lg p-3 text-sm fade-in text-center flex items-center justify-center gap-2">
+                    <i class="fas fa-check-circle"></i>
+                    <span x-text="'✅ تم تسجيل الطلب بنجاح! رقم الطلب: #' + orderId"></span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ═══════ LEFT COLUMN (1/3) — QUICK REPLIES ═══════ -->
+        <div class="space-y-4">
+
+            <!-- ── Timer ── -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 card-hover transition">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-600"><i class="far fa-hourglass ml-1"></i> وقت الرد</span>
+                    <span class="text-2xl font-bold" x-text="responseTime + 's'"></span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div :style="'width: ' + Math.min(responseTime / 60 * 100, 100) + '%'"
+                         :class="responseTime < 30 ? 'bg-green-500' : responseTime < 60 ? 'bg-yellow-500' : 'bg-red-500'"
+                         class="h-2 rounded-full transition-all duration-500"></div>
+                </div>
+                <p class="text-xs text-gray-400 mt-1 text-center">مؤقت تلقائي من بداية المحادثة</p>
+            </div>
+
+            <!-- ── Today's Orders Count ── -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 card-hover transition">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-600"><i class="fas fa-shopping-bag ml-1"></i> طلبات اليوم</span>
+                    <span class="text-3xl font-bold text-emerald-600" x-text="todayOrders"></span>
+                </div>
+            </div>
+
+            <!-- ── QUICK REPLY BANK ── -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 card-hover transition">
+                <h2 class="text-lg font-bold mb-3 flex items-center gap-2">
+                    <i class="fas fa-bolt text-amber-500"></i>
+                    الردود السريعة ⚡
+                </h2>
+                <div class="space-y-2">
+                    <template x-for="policy in policies" :key="policy.id">
+                        <button @click="copyText(policy.text, policy.title)"
+                                class="copy-btn w-full text-right bg-gray-50 hover:bg-amber-50 border border-gray-200 hover:border-amber-300 rounded-lg px-4 py-3 text-sm transition flex items-center gap-3 group">
+                            <span x-html="policy.title.split(' ')[0]" class="text-lg"></span>
+                            <span class="flex-1 font-medium" x-text="policy.title"></span>
+                            <i class="fas fa-copy text-gray-400 group-hover:text-amber-600 transition text-xs"></i>
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- ── SEARCH IN POLICIES ── -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 card-hover transition">
+                <div class="relative">
+                    <input x-model="policySearch" @input="filterPolicies()"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 focus:ring-2 focus:ring-amber-500 outline-none text-sm"
+                           placeholder="🔍 ابحث في الردود...">
+                </div>
+                <template x-if="policySearch.length > 0">
+                    <div class="mt-2 space-y-1 max-h-40 overflow-y-auto">
+                        <template x-for="p in filteredPolicies" :key="p.id">
+                            <button @click="copyText(p.text, p.title)"
+                                    class="w-full text-right bg-amber-50 hover:bg-amber-100 rounded-lg px-3 py-2 text-xs transition">
+                                <span class="font-medium" x-text="p.title"></span>
+                            </button>
+                        </template>
+                        <p x-show="filteredPolicies.length === 0" class="text-gray-400 text-xs text-center py-2">لا توجد نتائج</p>
+                    </div>
+                </template>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ─── FOOTER ─── -->
+    <div class="text-center text-gray-400 text-xs mt-8 pb-4">
+        <i class="fas fa-crown text-purple-400"></i> Royal Agent Tool v1.0 — <span class="text-purple-400">Made with ❤️ by Louve</span>
+    </div>
+</div>
+
+<script>
+function royalApp() {
+    return {
+        // ── Tab ──
+        tab: 'zr',
+
+        // ── Wilaya search ──
+        wilayaQuery: '',
+        showWilayaList: false,
+        wilayaResults: [],
+        allWilayas: [],
+        selectedWilaya: '',
+        zrHome: 0,
+        zrOffice: 0,
+
+        // ── Local ──
+        communes: [],
+        selectedCommune: '',
+        localHome: 0,
+        localOffice: 0,
+
+        // ── Policies ──
+        policies: [],
+        policySearch: '',
+        filteredPolicies: [],
+
+        // ── Timer ──
+        responseTime: 0,
+        timerInterval: null,
+
+        // ── Orders ──
+        form: { name: '', phone: '', wilaya: '', commune: '', product: '', size: '', color: '', quantity: 1, delivery_type: 'home', note: '' },
+        orderSuccess: false,
+        orderId: null,
+        todayOrders: 0,
+
+        // ── Init ──
+        async init() {
+            // Load all wilayas
+            const res = await fetch('/api/wilayas');
+            this.allWilayas = await res.json();
+
+            // Load communes
+            const resC = await fetch('/api/communes');
+            this.communes = await resC.json();
+
+            // Load policies
+            const resP = await fetch('/api/policies');
+            this.policies = await resP.json();
+            this.filteredPolicies = this.policies;
+
+            // Timer
+            this.timerInterval = setInterval(() => { this.responseTime++; }, 1000);
+
+            // Load persisted orders from localStorage
+            this.loadOrders();
+        },
+
+        // ── Wilaya search ──
+        searchWilayas() {
+            if (!this.wilayaQuery) {
+                this.wilayaResults = this.allWilayas.slice(0, 10);
+                return;
+            }
+            this.wilayaResults = this.allWilayas.filter(w => w.includes(this.wilayaQuery));
+        },
+
+        async selectWilaya(wilaya) {
+            this.selectedWilaya = wilaya;
+            this.wilayaQuery = wilaya;
+            this.showWilayaList = false;
+            const res = await fetch('/api/shipping/zr?wilaya=' + encodeURIComponent(wilaya));
+            const data = await res.json();
+            if (!data.error) {
+                this.zrHome = data.home;
+                this.zrOffice = data.office;
+            }
+        },
+
+        async calcLocal() {
+            if (!this.selectedCommune) return;
+            const res = await fetch('/api/shipping/local?commune=' + encodeURIComponent(this.selectedCommune));
+            const data = await res.json();
+            if (!data.error) {
+                this.localHome = data.home;
+                this.localOffice = data.office;
+            }
+        },
+
+        // ── Copy to clipboard ──
+        async copyText(text, title) {
+            try {
+                await navigator.clipboard.writeText(text);
+                this.showToast('✅ تم نسخ: ' + title);
+            } catch (e) {
+                // fallback
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                this.showToast('✅ تم نسخ: ' + title);
+            }
+        },
+
+        showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            toastMsg.textContent = msg;
+            toast.style.display = 'flex';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        },
+
+        // ── Policy search ──
+        filterPolicies() {
+            if (!this.policySearch) {
+                this.filteredPolicies = this.policies;
+                return;
+            }
+            const q = this.policySearch.toLowerCase();
+            this.filteredPolicies = this.policies.filter(p =>
+                p.title.includes(q) || p.text.toLowerCase().includes(q)
+            );
+        },
+
+        // ── Order submission ──
+        async submitOrder() {
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.form)
+            });
+            const data = await res.json();
+            if (data.success) {
+                this.orderId = data.order_id;
+                this.orderSuccess = true;
+                this.showToast('✅ تم تسجيل الطلب #' + data.order_id);
+                // Save to localStorage
+                this.saveLocalOrder(data.order);
+                // Reset form
+                this.form = { name: '', phone: '', wilaya: '', commune: '', product: '', size: '', color: '', quantity: 1, delivery_type: 'home', note: '' };
+                this.todayOrders++;
+                setTimeout(() => { this.orderSuccess = false; }, 5000);
+            } else {
+                this.showToast('❌ خطأ: ' + data.error);
+            }
+        },
+
+        saveLocalOrder(order) {
+            let orders = JSON.parse(localStorage.getItem('royal_orders') || '[]');
+            orders.push(order);
+            localStorage.setItem('royal_orders', JSON.stringify(orders));
+        },
+
+        loadOrders() {
+            const orders = JSON.parse(localStorage.getItem('royal_orders') || '[]');
+            this.todayOrders = orders.length;
+        }
+    };
+}
+</script>
+
+</body>
+</html>

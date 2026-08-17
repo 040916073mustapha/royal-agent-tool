@@ -1,0 +1,12 @@
+/* Royal Agent Tool - Custom styles */
+.copy-btn:active { transform: scale(0.95); }
+.badge-neon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+.fade-in { animation: fadeIn 0.3s ease-in; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #1f2937; color: white; padding: 12px 24px; border-radius: 12px;
+    z-index: 9999; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    display: none; animation: fadeIn 0.3s ease;
+}
