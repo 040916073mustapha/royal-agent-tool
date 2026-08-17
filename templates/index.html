@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         body { font-family: 'Segoe UI', system-ui, sans-serif; }
         .copy-btn:active { transform: scale(0.95); }
@@ -294,7 +295,9 @@
 
     <!-- ─── FOOTER ─── -->
     <div class="text-center text-gray-400 text-xs mt-8 pb-4">
-        <i class="fas fa-crown text-purple-400"></i> Royal Agent Tool v1.0 — <span class="text-purple-400">Made with ❤️ by Louve</span>
+        <i class="fas fa-crown text-purple-400"></i> Royal Agent Tool v1.1 — <span class="text-purple-400">Made with ❤️ by Louve</span>
+        <span class="mx-2">|</span>
+        <a href="/admin" class="hover:text-purple-400 transition"><i class="fas fa-shield-alt"></i> Admin</a>
     </div>
 </div>
 
@@ -352,8 +355,19 @@ function royalApp() {
             // Timer
             this.timerInterval = setInterval(() => { this.responseTime++; }, 1000);
 
-            // Load persisted orders from localStorage
-            this.loadOrders();
+            // Load today's order count from DB
+            this.loadTodayCount();
+        },
+
+        async loadTodayCount() {
+            try {
+                const res = await fetch('/api/orders/today-count');
+                const data = await res.json();
+                this.todayOrders = data.count;
+            } catch(e) {
+                // fallback to localStorage
+                this.loadOrders();
+            }
         },
 
         // ── Wilaya search ──
@@ -437,7 +451,8 @@ function royalApp() {
                 this.orderSuccess = true;
                 this.showToast('✅ تم تسجيل الطلب #' + data.order_id);
                 // Save to localStorage
-                this.saveLocalOrder(data.order);
+                const savedOrder = { ...this.form, id: data.order_id };
+                this.saveLocalOrder(savedOrder);
                 // Reset form
                 this.form = { name: '', phone: '', wilaya: '', commune: '', product: '', size: '', color: '', quantity: 1, delivery_type: 'home', note: '' };
                 this.todayOrders++;

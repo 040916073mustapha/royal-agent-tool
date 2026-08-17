@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👑 Admin — Royal Agent Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: #1f2937; color: white; padding: 12px 24px; border-radius: 12px;
+            z-index: 9999; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: none; animation: fadeIn 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800" x-data="adminApp()" x-init="init()">
+
+<div id="toast" class="toast"><span id="toastMsg"></span></div>
+
+<!-- ─── TOP BAR ─── -->
+<div class="bg-gradient-to-l from-purple-700 to-indigo-800 text-white shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <span class="text-xl">👑 Admin Panel</span>
+            <span class="bg-white/20 text-xs px-3 py-1 rounded-full">لوحة الطلبات</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-sm bg-green-500/30 px-3 py-1 rounded-full">
+                <i class="fas fa-shopping-bag ml-1"></i>
+                <span x-text="totalOrders"></span> طلب
+            </span>
+            <a href="/" class="text-sm hover:text-purple-200 transition">
+                <i class="fas fa-arrow-right ml-1"></i> العودة للتطبيق
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="max-w-6xl mx-auto p-4">
+
+    <!-- ─── Search ─── -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
+        <div class="flex gap-3">
+            <div class="flex-1 relative">
+                <input x-model="searchQuery" @input.debounce.300ms="loadOrders()"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-3 pr-10 focus:ring-2 focus:ring-purple-500 outline-none"
+                       placeholder="🔍 ابحث باسم، هاتف، ولاية، منتج...">
+                <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
+            </div>
+            <button @click="searchQuery = ''; loadOrders()"
+                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition">
+                <i class="fas fa-times"></i>
+            </button>
+            <button @click="exportCSV()"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm transition">
+                <i class="fas fa-download ml-1"></i> تصدير CSV
+            </button>
+        </div>
+    </div>
+
+    <!-- ─── Stats ─── -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 text-center">
+            <p class="text-3xl font-bold text-purple-700" x-text="stats.today"></p>
+            <p class="text-xs text-gray-500">اليوم</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 text-center">
+            <p class="text-3xl font-bold text-emerald-700" x-text="stats.home"></p>
+            <p class="text-xs text-gray-500">توصيل منزل</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 text-center">
+            <p class="text-3xl font-bold text-blue-700" x-text="stats.office"></p>
+            <p class="text-xs text-gray-500">توصيل مكتب</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 text-center">
+            <p class="text-3xl font-bold text-amber-700" x-text="stats.wilayas"></p>
+            <p class="text-xs text-gray-500">ولاية</p>
+        </div>
+    </div>
+
+    <!-- ─── Orders Table ─── -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-600">
+                    <tr>
+                        <th class="px-4 py-3 text-right">#</th>
+                        <th class="px-4 py-3 text-right">الاسم</th>
+                        <th class="px-4 py-3 text-right">الهاتف</th>
+                        <th class="px-4 py-3 text-right">المنتج</th>
+                        <th class="px-4 py-3 text-right">المقاس/اللون</th>
+                        <th class="px-4 py-3 text-right">الولاية</th>
+                        <th class="px-4 py-3 text-right">التوصيل</th>
+                        <th class="px-4 py-3 text-right">التاريخ</th>
+                        <th class="px-4 py-3 text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <template x-for="order in orders" :key="order.id">
+                        <tr class="hover:bg-gray-50 transition fade-in">
+                            <td class="px-4 py-3 font-mono text-gray-400" x-text="'#' + order.id"></td>
+                            <td class="px-4 py-3 font-medium" x-text="order.name"></td>
+                            <td class="px-4 py-3 ltr text-left" x-text="order.phone"></td>
+                            <td class="px-4 py-3">
+                                <div x-text="order.product"></div>
+                                <span class="text-xs text-gray-400" x-text="'كمية: ' + order.quantity"></span>
+                            </td>
+                            <td class="px-4 py-3 text-xs">
+                                <span x-text="order.size"></span> / <span x-text="order.color"></span>
+                            </td>
+                            <td class="px-4 py-3" x-text="order.wilaya"></td>
+                            <td class="px-4 py-3">
+                                <span x-show="order.delivery_type === 'home'"
+                                      class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">منزل</span>
+                                <span x-show="order.delivery_type === 'office'"
+                                      class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs">مكتب</span>
+                            </td>
+                            <td class="px-4 py-3 text-xs text-gray-500" x-text="formatDate(order.created_at)"></td>
+                            <td class="px-4 py-3 text-center">
+                                <button @click="copyOrder(order)" class="text-purple-600 hover:text-purple-800 transition mx-1"
+                                        title="نسخ الطلب">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <button @click="deleteOrder(order.id)" class="text-red-500 hover:text-red-700 transition mx-1"
+                                        title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+                    <tr x-show="orders.length === 0">
+                        <td colspan="9" class="px-4 py-12 text-center text-gray-400">
+                            <i class="fas fa-inbox text-4xl mb-2 block"></i>
+                            لا توجد طلبات بعد
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ─── Pagination ─── -->
+    <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
+        <span x-text="'عرض ' + orders.length + ' من ' + totalOrders + ' طلب'"></span>
+        <div class="flex gap-2">
+            <button @click="prevPage()" :disabled="page === 1"
+                    class="px-3 py-1 rounded border" :class="page === 1 ? 'text-gray-300' : 'hover:bg-gray-100'">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            <span class="px-3 py-1" x-text="'صفحة ' + page"></span>
+            <button @click="nextPage()"
+                    class="px-3 py-1 rounded border hover:bg-gray-100">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function adminApp() {
+    return {
+        orders: [],
+        totalOrders: 0,
+        searchQuery: '',
+        page: 1,
+        pageSize: 20,
+        stats: { today: 0, home: 0, office: 0, wilayas: 0 },
+
+        async init() {
+            await this.loadOrders();
+            await this.loadStats();
+        },
+
+        async loadOrders() {
+            let url = '/api/orders';
+            if (this.searchQuery) {
+                url += '?q=' + encodeURIComponent(this.searchQuery);
+            }
+            const res = await fetch(url);
+            if (res.status === 401) {
+                window.location.reload();
+                return;
+            }
+            const data = await res.json();
+            this.orders = data;
+            this.totalOrders = data.length;
+        },
+
+        async loadStats() {
+            try {
+                const res = await fetch('/api/orders/today-count');
+                const data = await res.json();
+                this.stats.today = data.count;
+            } catch(e) {}
+
+            // Compute from loaded orders
+            this.stats.home = this.orders.filter(o => o.delivery_type === 'home').length;
+            this.stats.office = this.orders.filter(o => o.delivery_type === 'office').length;
+            const wilayas = new Set(this.orders.map(o => o.wilaya));
+            this.stats.wilayas = wilayas.size;
+        },
+
+        formatDate(d) {
+            if (!d) return '-';
+            return d.slice(0, 10) + ' ' + d.slice(11, 16);
+        },
+
+        copyOrder(order) {
+            const text = `🛍️ طلب #${order.id}
+👤 ${order.name}
+📱 ${order.phone}
+📍 ${order.wilaya} - ${order.commune}
+📦 ${order.product} (مقاس ${order.size} / ${order.color})
+📦 الكمية: ${order.quantity}
+🚚 توصيل: ${order.delivery_type === 'home' ? 'منزل' : 'مكتب'}
+📝 ${order.note || ''}`;
+            navigator.clipboard.writeText(text).then(() => {
+                this.showToast('✅ تم نسخ الطلب #' + order.id);
+            });
+        },
+
+        async deleteOrder(id) {
+            if (!confirm('هل تريد حذف الطلب #' + id + '؟')) return;
+            // Use DELETE via custom endpoint
+            const res = await fetch('/api/orders/' + id, { method: 'DELETE' });
+            if (res.ok) {
+                this.showToast('🗑️ تم حذف الطلب #' + id);
+                await this.loadOrders();
+                await this.loadStats();
+            }
+        },
+
+        prevPage() {
+            if (this.page > 1) this.page--;
+        },
+
+        nextPage() {
+            this.page++;
+        },
+
+        exportCSV() {
+            if (this.orders.length === 0) {
+                this.showToast('❌ لا توجد طلبات للتصدير');
+                return;
+            }
+            let csv = 'ID,الاسم,الهاتف,الولاية,البلدية,المنتج,المقاس,اللون,الكمية,التوصيل,ملاحظة,التاريخ\n';
+            this.orders.forEach(o => {
+                csv += `${o.id},"${o.name}","${o.phone}","${o.wilaya}","${o.commune}","${o.product}","${o.size}","${o.color}",${o.quantity},"${o.delivery_type === 'home' ? 'منزل' : 'مكتب'}","${o.note || ''}","${o.created_at || ''}"\n`;
+            });
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'royal_orders_' + new Date().toISOString().slice(0,10) + '.csv';
+            link.click();
+            this.showToast('✅ تم تصدير ' + this.orders.length + ' طلب');
+        },
+
+        showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            toast.style.display = 'flex';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        }
+    };
+}
+</script>
+
+</body>
+</html>

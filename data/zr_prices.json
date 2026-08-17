@@ -1,7 +1,7 @@
 {
   "تلمسان": {"wilaya_code": 13, "home": 500, "office": 350},
-  "عين تموشنت": {"wilaya_code": 46, "home": 650, "office": 500},
   "الجزائر العاصمة": {"wilaya_code": 16, "home": 650, "office": 450},
+  "عين تموشنت": {"wilaya_code": 46, "home": 650, "office": 500},
   "وهران": {"wilaya_code": 31, "home": 700, "office": 500},
   "معسكر": {"wilaya_code": 29, "home": 700, "office": 500},
   "مستغانم": {"wilaya_code": 27, "home": 700, "office": 500},

@@ -2,22 +2,27 @@
 
 🧰 Cheat sheet سريع لفريق خدمة عملاء **Royal Chaussures** بجانب Meta Business Suite.
 
-## ✨ الميزات
-- ⏰ **الشريط العلوي**: أوقات العمل + رقم الهاتف
-- 🚚 **حاسبة التوصيل**: ZR Express 58 ولاية + تلمسان محلي
-- 📝 **نموذج تسجيل الطلبات**: حفظ Offline (localStorage) + Online (API)
-- ⚡ **بنك الردود السريعة**: نسخ بنقرة واحدة
-- ⏱️ **مؤقت وقت الرد**: تحفيز الفريق
-- 🔍 **بحث في الردود**: فلترة سريعة
+## ✨ الميزات (v1.1)
+- ⏰ **الشريط العلوي**: أوقات العمل + رقم الهاتف + عطلة الجمعة
+- 🚚 **حاسبة التوصيل ZR Express**: 58 ولاية بأسعار دقيقة
+- 🏠 **حاسبة تلمسان المحلي**: 13 بلدية (منزل/مكتب)
+- 📝 **تسجيل الطلبات**: حفظ في SQLite (دائم) + localStorage (offline)
+- ⚡ **بنك الردود السريعة**: 9 ردود مع نسخ بنقرة واحدة + بحث
+- ⏱️ **مؤقت وقت الرد** + عداد الطلبات
+- 🔐 **لوحة Admin** محمية: `/admin` — عرض، بحث، حذف، تصدير CSV
 
 ## 🛠️ التقنيات
-- **Backend**: Flask (Python)
-- **Frontend**: AlpineJS + Tailwind CSS
+- **Backend**: Flask (Python) + SQLite
+- **Frontend**: AlpineJS + Tailwind CSS + Clipboard API
+- **Auth**: HTTP Basic Auth (`royal` / `chaussures2024`)
 - **Deploy**: Render (Web Service)
-- **Storage**: localStorage (offline) + in-memory/SQLite (online)
 
 ## 🚀 النشر
 ```bash
 git push origin main
-# Render يتشغل تلقائياً
+# Render يكتشف render.yaml تلقائياً
 ```
+
+## 🔑 بيانات الدخول
+- **تطبيق agents**: مفتوح (بدون تسجيل دخول)
+- **لوحة Admin**: `/admin` — username: `royal` / password: `chaussures2024`
